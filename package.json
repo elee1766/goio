@@ -16,7 +16,8 @@
   },
   "scripts": {
     "barrels:build": "barrelsby -d ./src --location all --delete --exclude spec.ts",
-    "barrels:watch": "chokidar \"src/**/*.ts\" -i \"src/**/index.ts\" -c 'yarn run barrels:build'"
+    "barrels:watch": "chokidar \"src/**/*.ts\" -i \"src/**/index.ts\" -c 'yarn run barrels:build'",
+    "test":"vitest"
   },
   "devDependencies": {
     "@types/benchmark": "^2",
