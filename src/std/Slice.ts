@@ -3,15 +3,36 @@ import invariant from 'tiny-invariant';
 
 export class Slice {
 
+  constructor(array: Uint8Array, len: number) {
+    this.arr = array
+    this.len = len
+  }
+
+  static New(arr: number[]): Slice;
+  static New(arr: string): Slice;
+  static New(arr: Uint8Array): Slice;
+  static New(arr: ArrayBufferLike): Slice;
+  static New(arr: string, len: number): Slice;
   static New(arr: Uint8Array, len: number): Slice;
-  static New(arr: Uint8Array | ArrayBufferLike | "string", len: number): Slice {
+  static New(arr: ArrayBufferLike, len: number): Slice;
+  static New(arr: Uint8Array | ArrayBufferLike | string | number[], len?: number): Slice {
     if(arr instanceof Uint8Array) {
+      if(len === undefined) {
+        len = arr.length
+      }
       return new Slice(arr, len)
     }
     if(typeof arr == "string") {
+      if(len === undefined) {
+        len = arr.length
+      }
       return new Slice(new TextEncoder().encode(arr), len)
     }
-    return new Slice(new Uint8Array(arr), len)
+    let ua = new Uint8Array(arr)
+    if(len === undefined) {
+      len = ua.byteLength
+    }
+    return new Slice(ua, len)
   }
 
   static Make(): Slice;
@@ -28,14 +49,21 @@ export class Slice {
     return new Slice(new Uint8Array(cap), len)
   }
 
+  static copy(dst: Slice, src: Slice): number {
+    const len = Math.min(dst.len, src.len);
+    dst.array.set(src.array.subarray(0, len), 0);
+    return len;
+  }
 
-  private array: Uint8Array
-  len: number
+
+  private arr: Uint8Array
+  private len: number
 
 
-  constructor(array: Uint8Array, len: number) {
-    this.array = array
-    this.len = len
+
+
+  public get array() {
+    return this.arr
   }
 
   public get length() {
@@ -57,26 +85,38 @@ export class Slice {
   }
 
 
-  _array(): Uint8Array  {
-    return this.array
-  }
-
-  equals(o?:Uint8Array):boolean {
+  public equals(o?:any):boolean {
     if(o === undefined) {
       return false
     }
-    if(this.len != o.length){
+    let ua: Uint8Array
+    if(o instanceof Slice) {
+      ua = o.array
+    }
+    else if (o instanceof Uint8Array) {
+      ua = o
+    }
+    else if (o instanceof Buffer) {
+      ua = new Uint8Array(o)
+    }
+    else if (typeof o === "string") {
+      ua = new TextEncoder().encode(o)
+    }
+    else {
       return false
     }
-    for(let idx = 0; idx < o.length; idx++) {
-      if(this.array[idx] !== o[idx]) {
+    if(this.len != ua.length){
+      return false
+    }
+    for(let idx = 0; idx < this.len; idx++) {
+      if(this.array[idx] !== ua[idx]) {
         return false
       }
     }
     return true
   }
 
-  append(...xs: Slice[]): Slice {
+  public append(...xs: Slice[]): Slice {
     // make shallow copy
     const slice = new Slice(this.array, this.len)
     // the new array
@@ -87,28 +127,26 @@ export class Slice {
     if(slice.len + increase > slice.array.length){
       slice.growslice(slice.len + increase)
     }
-    increase = 0
+    let offset = slice.len
     for(const x of xs) {
-      increase = increase + x.len
+      slice.array.set(x.array, offset);
+      offset += x.len
     }
     slice.len = slice.len + increase
     return slice
   }
 
 
-  slice(from: number = 0, to?: number): Slice {
+  public slice(from: number = 0, to?: number): Slice {
     const slice = new Slice(this.array, this.len)
     if(to === undefined) {
       to = slice.len
     }
-    invariant(to >= slice.len,"index out of bounds")
-    slice.array = new Uint8Array(slice.array, from, to)
-    slice.len = from - to
+    invariant(to <= slice.len,"index out of bounds")
+    invariant(to >= from, "to must be greater than or equal to from")
+    slice.arr = slice.array.subarray( from, to)
+    slice.len = to - from
     return slice
-  }
-
-  s(from: number = 0, to?: number): Slice {
-    return this.s(from, to)
   }
 
   private growslice(newLen: number) {
@@ -117,7 +155,7 @@ export class Slice {
     const newCap = this.nextslicecap(newLen, oldCap)
     const newArray = new Uint8Array(newCap)
     newArray.set(this.array)
-    this.array = newArray
+    this.arr = newArray
   }
 
   private nextslicecap(newLen: number, oldCap: number): number {
