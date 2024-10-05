@@ -11,6 +11,9 @@
 		"esModuleInterop": true,
 		"isolatedModules": true,
 		"skipLibCheck": true,
+		"paths": {
+			"@goio/*": ["./src/"]
+		}
 	},
 	"include": [
 		"src"
