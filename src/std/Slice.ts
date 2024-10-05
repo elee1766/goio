@@ -43,9 +43,9 @@ export class Slice {
       len = 0
     }
     if(cap === undefined) {
-      cap = 0
+      cap = len
     }
-    invariant(cap >= len, "cap must be greater or equal to len")
+    invariant(cap >= len, `cap(${cap}) must be greater or equal to len(${len})`)
     return new Slice(new Uint8Array(cap), len)
   }
 

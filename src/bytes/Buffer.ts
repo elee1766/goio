@@ -1,6 +1,15 @@
-import { Slice } from "../";
+import { Slice } from '../';
 
-export class Buffer {
+export interface Reader {
+  read(p: Slice): number;
+}
+
+export interface Writer {
+  write(p: Slice): number;
+  writeString(s: string): number;
+}
+
+export class Buffer implements Reader, Writer {
   private buf: Slice;
   private off: number;
 
@@ -9,31 +18,31 @@ export class Buffer {
     this.off = 0;
   }
 
-  write(p: Uint8Array): number {
-    this.buf = this.buf.append(Slice.New(p));
+  write(p: Slice): number {
+    this.buf = this.buf.append(p);
     return p.length;
   }
 
   writeString(s: string): number {
-    return this.write(new TextEncoder().encode(s));
+    return this.write(Slice.New(s));
   }
 
-  read(p: Uint8Array): number {
+  read(p: Slice): number {
     if (this.off >= this.buf.length) {
       return 0; // EOF
     }
     const n = Math.min(p.length, this.buf.length - this.off);
-    p.set(this.buf.array.subarray(this.off, this.off + n));
+    p.array.set(this.buf.array.subarray(this.off, this.off + n));
     this.off += n;
     return n;
   }
 
-  bytes(): Uint8Array {
-    return this.buf.array.subarray(this.off);
+  get bytes(): Slice {
+    return this.buf
   }
 
   toString(): string {
-    return new TextDecoder().decode(this.bytes());
+    return new TextDecoder().decode(this.bytes.array.subarray(0, this.length));
   }
 
   reset(): void {
@@ -41,7 +50,7 @@ export class Buffer {
     this.off = 0;
   }
 
-  length(): number {
+  get length(): number {
     return this.buf.length - this.off;
   }
 
