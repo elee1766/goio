@@ -1,13 +1,5 @@
-import { Slice } from '../';
+import { Slice, Reader, Writer } from '../';
 
-export interface Reader {
-  read(p: Slice): number;
-}
-
-export interface Writer {
-  write(p: Slice): number;
-  writeString(s: string): number;
-}
 
 export class Buffer implements Reader, Writer {
   private buf: Slice;
@@ -18,16 +10,16 @@ export class Buffer implements Reader, Writer {
     this.off = 0;
   }
 
-  write(p: Slice): number {
+  async write(p: Slice): Promise<number> {
     this.buf = this.buf.append(p);
     return p.length;
   }
 
-  writeString(s: string): number {
+  async writeString(s: string): Promise<number> {
     return this.write(Slice.New(s));
   }
 
-  read(p: Slice): number {
+  async read(p: Slice): Promise<number> {
     if (this.off >= this.buf.length) {
       return 0; // EOF
     }

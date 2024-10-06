@@ -1,7 +1,6 @@
-import * as io from "@goio/io"
-import { Slice } from "@goio/";
+import { Slice, Reader} from "../";
 
-export class Reader implements io.Reader {
+export class BufferedReader implements Reader {
     private buffer: Slice;
     private reader: Reader;
     private bufSize: number;
@@ -14,10 +13,10 @@ export class Reader implements io.Reader {
         this.pos = 0;
     }
 
-    async Read(p: Slice): Promise<number> {
+    async read(p: Slice): Promise<number> {
         if (this.pos >= this.buffer.length) {
             this.pos = 0;
-            const n = await this.reader.Read(this.buffer);
+            const n = await this.reader.read(this.buffer);
             if (n <= 0) {
                 return n;
             }
@@ -39,7 +38,7 @@ export class Reader implements io.Reader {
                 }
             }
             this.pos = this.buffer.length;
-            const n = await this.reader.Read(this.buffer);
+            const n = await this.reader.read(this.buffer);
             if (n <= 0) {
                 break;
             }
@@ -54,7 +53,7 @@ export class Reader implements io.Reader {
 
     Peek(n: number): Slice {
         if (n > this.buffer.length - this.pos) {
-            throw new Error("BufferedReader: Peek out of range");
+            throw new Error("BufferedBufferedReader: Peek out of range");
         }
         return this.buffer.get(this.pos, this.pos + n);
     }
