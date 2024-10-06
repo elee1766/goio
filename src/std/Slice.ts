@@ -60,8 +60,6 @@ export class Slice {
   private len: number
 
 
-
-
   public get array() {
     return this.arr
   }
